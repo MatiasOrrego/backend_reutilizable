@@ -84,6 +84,3 @@ prisma/
 .env
 ```
 
-## Licencia
-
-MIT
