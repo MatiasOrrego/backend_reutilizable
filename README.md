@@ -1,13 +1,13 @@
 # Backend Simple
 
-Backend REST construido con Node.js, Express, TypeScript y Prisma ORM usando SQLite.
+Backend REST construido con Node.js, Express, TypeScript y Prisma ORM usando postgres en supabase.
 
 ## Características
 
 - Autenticación JWT
 - Gestión de usuarios y items
 - Validación con Zod
-- Base de datos SQLite (puedes cambiar a otro motor en `prisma/schema.prisma`)
+- Base de datos Postgres (puedes cambiar a otro motor en `prisma/schema.prisma`)
 - Scripts de seed para datos iniciales
 
 ## Instalación
@@ -24,7 +24,7 @@ Backend REST construido con Node.js, Express, TypeScript y Prisma ORM usando SQL
    ```
    PORT=3000
    JWT_SECRET=supersecret
-   DATABASE_URL="file:./dev.db"
+   DATABASE_URL="postgresql://usuario:contraseña@host:puerto/dbname"
    ```
 
 4. Genera el cliente Prisma:
