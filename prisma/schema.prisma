@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,26 +10,22 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  role      String   @default("user")
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  items     Item[] // Relación opuesta
+// Modelo para items (puedes adaptar campos según tu necesidad)
+model Item {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  
+  @@map("items")
 }
 
-model Item {
-  id        String   @id @default(uuid())
-  title     String
-  content   String?
-  status    String   @default("ACTIVE")
-  ownerId   String?
-  owner     User?    @relation(fields: [ownerId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([status])
+model User {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  name       String?
+  createdAt  DateTime @default(now()) @map("created_at")
+  
+  @@map("users")
 }

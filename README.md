@@ -1,86 +1,124 @@
-# Backend Simple
+# Backend reutilizable (JS) — Hackathon starter
 
-Backend REST construido con Node.js, Express, TypeScript y Prisma ORM usando postgres en supabase.
+Este repositorio contiene un backend ligero en JavaScript (ESM) preparado para usarse con una base de datos PostgreSQL (ej. Supabase) y Prisma como ORM. Incluye rutas CRUD para `items` y un flujo básico de autenticación (registro/login) con bcrypt + JWT.
 
-## Características
+## Requisitos
+- Node.js 18+ (o 20+ recomendado)
+- Cuenta y proyecto en Supabase (o cualquier Postgres accesible)
+- Git (para versionar y push)
 
-- Autenticación JWT
-- Gestión de usuarios y items
-- Validación con Zod
-- Base de datos Postgres (puedes cambiar a otro motor en `prisma/schema.prisma`)
-- Scripts de seed para datos iniciales
+## Estructura rápida
+- `src/` — código fuente (config, controllers, services, routes, middleware)
+- `prisma/schema.prisma` — esquema Prisma
+- `generated/prisma` — cliente Prisma generado (incluye `query_engine` para Windows)
+- `.env.example` — ejemplo de variables de entorno
 
-## Instalación
+## Variables de entorno (.env)
+Copia `.env.example` a `.env` y completa los valores. Mínimo requerido:
 
-1. Clona el repositorio y entra en la carpeta del proyecto.
-2. Instala las dependencias:
+```env
+PORT=4000
+JWT_SECRET=una_clave_larga_y_segura
+DATABASE_URL="postgresql://usuario:contraseña@HOST:PUERTO/nombre_db"
+# Opcional: usar el pooler (pgbouncer) en Supabase (puerto 6543) para runtime. Para migraciones/prisma db push prefiero la conexión directa (5432).
+```
 
-   ```
-   npm install
-   ```
+IMPORTANTE: No subas tu `.env` al repositorio. Asegúrate de que `.gitignore` contiene `.env`.
 
-3. Configura las variables de entorno en un archivo `.env` (puedes usar `.env.example` como referencia):
+## Preparar dependencias y Prisma
 
-   ```
-   PORT=3000
-   JWT_SECRET=supersecret
-   DATABASE_URL="postgresql://usuario:contraseña@host:puerto/dbname"
-   ```
+1. Instala dependencias:
 
-4. Genera el cliente Prisma:
+```bash
+npm install
+```
 
-   ```
-   npx prisma generate
-   ```
+2. Genera el cliente Prisma (después de ajustar `prisma/schema.prisma` si es necesario):
 
-5. (Opcional) Ejecuta el script de seed para crear datos iniciales:
+```bash
+npx prisma generate
+```
 
-   ```
-   npm run db:seed
-   ```
+3. Sincronizar esquema con la base de datos (opcional):
 
-## Uso
+```bash
+# Si tu proyecto usa pgbouncer/pooler en Supabase puede fallar. Si no, intenta:
+npx prisma db push
 
-- Ejecuta el servidor en modo desarrollo:
+# Si db push falla por el pooler, crea las tablas manualmente en Supabase SQL editor (ver sección SQL ejemplo abajo)
+```
 
-  ```
-  npm run dev
-  ```
 
-- Compila el proyecto:
+## SQL de ejemplo (crear tabla `items` y `users`)
+Si prefieres crear las tablas manualmente (recomendado si `db push` falla con pgbouncer), pega esto en el editor SQL de Supabase o ejecútalo en tu cliente Postgres:
 
-  ```
-  npm run build
-  ```
+```sql
+-- items
+CREATE TABLE IF NOT EXISTS public.items (
+  id serial PRIMARY KEY,
+  name text NOT NULL,
+  description text,
+  created_at timestamptz DEFAULT now()
+);
 
-- Inicia el servidor en producción:
+-- users (para auth básico)
+CREATE TABLE IF NOT EXISTS public.users (
+  id serial PRIMARY KEY,
+  email text UNIQUE NOT NULL,
+  password text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+```
 
-  ```
-  npm start
-  ```
+
+Después de cualquier cambio en `schema.prisma`, ejecuta `npx prisma generate`.
+
+## Ejecutar la aplicación
+
+```bash
+# en desarrollo (con nodemon si está instalado)
+npm run dev
+
+# o en producción
+npm start
+```
+
+Por defecto la app escucha en el puerto definido en `PORT` (ej. 4000).
 
 ## Endpoints principales
 
-- `POST /auth/register` — Registro de usuario
-- `POST /auth/login` — Login y obtención de token JWT
-- `GET /items` — Listado de items (requiere autenticación)
-- `POST /items` — Crear item (requiere autenticación)
+- GET `/api/health` — healthcheck
+- Items (CRUD)
+  - GET `/api/items` — listar items
+  - POST `/api/items` — crear item
+    - Body JSON: `{ "name": "Mi item", "description": "opcional" }`
+  - GET `/api/items/:id` — obtener por id
+  - PUT `/api/items/:id` — actualizar (body JSON con campos a actualizar)
+  - DELETE `/api/items/:id` — eliminar
 
-## Estructura del proyecto
+- Auth
+  - POST `/api/auth/register` — registrar (body: `{ "email": "...", "password": "..." }`)
+  - POST `/api/auth/login` — login (retorna JWT)
 
+Ejemplos rápidos con curl:
+
+```bash
+# crear item
+curl -X POST http://localhost:4000/api/items \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test","description":"desc"}'
+
+# login
+curl -X POST http://localhost:4000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"usuario@ejemplo.com","password":"secret"}'
 ```
-src/
-  app.ts
-  index.ts
-  config/
-  controllers/
-  middleware/
-  modules/
-  routes/
-  scripts/
-  types/
-prisma/
-  schema.prisma
-.env
-```
 
+## Próximos pasos y mejoras recomendadas
+
+- Añadir validación de request (p. ej. con zod) en controllers.
+- Añadir pruebas unitarias mínimas (supertest + jest/vitest) para endpoints críticos.
+- Añadir políticas CORS/helmet/rate-limit en `app.js` si vas a exponer la API.
+- (Opcional) Migraciones controladas con `prisma migrate` en un entorno sin pgbouncer.
+
+--
